@@ -1,4 +1,12 @@
-# Adding convenience imports to the package
+# Make web applications accessible
+try:
+    from gpt_engineer.applications import web
+except ImportError:
+    # This handles cases where the web module dependencies aren't installed
+    pass
 
-# from gpt_engineer.tools import code_vector_repository
-# from gpt_engineer.core.default import on_disk_repository
+try:
+    from gpt_engineer.applications import modern_ide
+except ImportError:
+    # This handles cases where the modern_ide module dependencies aren't installed
+    pass

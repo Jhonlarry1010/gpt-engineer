@@ -69,6 +69,8 @@ ge = 'gpt_engineer.applications.cli.main:app'
 gpte = 'gpt_engineer.applications.cli.main:app'
 bench = 'gpt_engineer.benchmark.__main__:app'
 gpte_test_application = 'tests.caching_main:app'
+gpte-modern-ide = 'gpt_engineer.applications.modern_ide.cli:run_command'
+gpte-modern-ide-install = 'gpt_engineer.applications.modern_ide.cli:install_command'
 
 [tool.poetry.extras]
 test = ["pytest", "pytest-cov"]
