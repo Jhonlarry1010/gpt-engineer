@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPT Engineer - AI IDE</title>
+    <link rel="stylesheet" href="static/css/style.css" />
+    <!-- Include CodeMirror for syntax highlighting (optional) -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <div class="header-title">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M20 7h-3a2 2 0 0 1-2-2V2"></path>
+            <path
+              d="M16 2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7"
+            ></path>
+            <path d="M12 12v6"></path>
+            <path d="M9 15h6"></path>
+          </svg>
+          GPT Engineer IDE
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline">Documentation</button>
+          <button class="btn btn-primary">Save Project</button>
+        </div>
+      </header>
+
+      <div class="grid grid-cols-3">
+        <!-- Left Sidebar - Project & Files -->
+        <div class="card">
+          <h2 class="card-title">Project Explorer</h2>
+
+          <div class="input-group">
+            <label class="input-label">Current Project</label>
+            <select class="input-field" id="project-selector">
+              <option value="">Select a project</option>
+              <option value="new">+ Create new project</option>
+            </select>
+          </div>
+
+          <div class="file-tree">
+            <div class="file-tree-header">
+              <span>Files</span>
+              <button class="btn btn-outline new-file-btn">New File</button>
+            </div>
+            <div class="file-tree-content">
+              <div class="file-item selected" data-path="main.py">
+                <span class="file-item-icon">📄</span>
+                <span class="file-item-name">main.py</span>
+              </div>
+              <div class="file-item" data-path="utils.py">
+                <span class="file-item-icon">📄</span>
+                <span class="file-item-name">utils.py</span>
+              </div>
+              <div class="file-item" data-path="README.md">
+                <span class="file-item-icon">📄</span>
+                <span class="file-item-name">README.md</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Content - Editor -->
+        <div class="card" style="grid-column: span 2">
+          <div class="code-editor">
+            <div class="code-editor-header">
+              <span class="code-editor-filename">main.py</span>
+              <div class="code-editor-actions">
+                <button class="btn btn-outline save-btn">Save</button>
+                <button class="btn btn-primary run-btn">Run</button>
+              </div>
+            </div>
+            <div class="code-editor-content">
+              <textarea class="code-editor-textarea" data-language="python">
+# Welcome to GPT Engineer IDE
+# Specify what you want to build, and let AI create it for you.
+
+def main():
+    print("Hello, World!")
+    print("This is a sample Python program.")
+    print("You can modify it or tell the AI to generate a new one.")
+    
+    # This is where your code will go
+    
+if __name__ == "__main__":
+    main()
+                        </textarea
+              >
+            </div>
+          </div>
+
+          <div class="terminal mt-4">
+            <div class="terminal-line info">GPT Engineer IDE Terminal</div>
+            <div class="terminal-line info">
+              Use this area to see output from your code
+            </div>
+            <div class="terminal-line success">Ready to execute commands</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Interaction Area -->
+      <div class="card mt-4">
+        <h2 class="card-title">AI Assistant</h2>
+
+        <div class="tabs">
+          <div class="tab active" data-tab="generate">Generate</div>
+          <div class="tab" data-tab="improve">Improve</div>
+          <div class="tab" data-tab="chat">Chat</div>
+        </div>
+
+        <div class="tab-content" id="generate-content">
+          <div class="input-group">
+            <label class="input-label">What do you want to build?</label>
+            <textarea
+              class="input-field textarea"
+              placeholder="Describe the application you want to create..."
+            >
+Create a simple web server that serves a "Hello, World!" page and includes a counter that increments on each page refresh.</textarea
+            >
+          </div>
+          <button class="btn btn-primary generate-btn">Generate Code</button>
+          <div class="status-indicator info mt-4">Ready to generate</div>
+        </div>
+
+        <div class="tab-content" id="improve-content" style="display: none">
+          <div class="input-group">
+            <label class="input-label"
+              >How do you want to improve the code?</label
+            >
+            <textarea
+              class="input-field textarea"
+              placeholder="Describe how you want to improve the existing code..."
+            >
+Add error handling and implement proper logging for the web server.</textarea
+            >
+          </div>
+          <button class="btn btn-primary improve-btn">Improve Code</button>
+          <div class="status-indicator info mt-4">Ready to improve</div>
+        </div>
+
+        <div class="tab-content" id="chat-content" style="display: none">
+          <div class="chat-container">
+            <div class="chat-messages">
+              <div class="message ai">
+                Hello! I'm your AI assistant. How can I help you with your
+                project today?
+              </div>
+            </div>
+            <form class="chat-form">
+              <div class="chat-input-container">
+                <input
+                  type="text"
+                  class="chat-input"
+                  placeholder="Type your message here..."
+                />
+                <button type="submit" class="btn btn-primary chat-send-btn">
+                  Send
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="static/js/editor.js"></script>
+    <script>
+      // Simple tab switching
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", function () {
+          // Update active tab
+          document
+            .querySelectorAll(".tab")
+            .forEach((t) => t.classList.remove("active"));
+          this.classList.add("active");
+
+          // Show respective content
+          const tabId = this.getAttribute("data-tab");
+          document.querySelectorAll(".tab-content").forEach((content) => {
+            content.style.display = "none";
+          });
+          document.getElementById(`${tabId}-content`).style.display = "block";
+        });
+      });
+
+      // Handle generate button
+      document
+        .querySelector(".generate-btn")
+        .addEventListener("click", function () {
+          const prompt = document.querySelector(
+            "#generate-content textarea",
+          ).value;
+          if (!prompt.trim()) {
+            alert("Please enter a description of what you want to build.");
+            return;
+          }
+
+          const statusIndicator = document.querySelector(
+            "#generate-content .status-indicator",
+          );
+          statusIndicator.className = "status-indicator warning mt-4";
+          statusIndicator.textContent = "Generating code...";
+
+          // In a real implementation, this would call an API
+          // For demonstration, we're simulating a delay
+          setTimeout(() => {
+            statusIndicator.className = "status-indicator success mt-4";
+            statusIndicator.textContent = "Code generated successfully!";
+
+            // Update the code editor
+            const editor = document.querySelector(
+              ".code-editor-textarea",
+            ).editor;
+            if (editor) {
+              editor.setValue(`# Generated code based on your prompt
+# Web server with Hello World and counter
+
+from flask import Flask, request, render_template_string
+
+app = Flask(__name__)
+counter = 0
+
+@app.route('/')
+def hello_world():
+    global counter
+    counter += 1
+    
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Hello, World!</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 40px;
+                text-align: center;
+            }
+            h1 {
+                color: #2563eb;
+            }
+            .counter {
+                margin-top: 20px;
+                font-size: 18px;
+                color: #4b5563;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Hello, World!</h1>
+        <div class="counter">This page has been viewed {{ counter }} times.</div>
+    </body>
+    </html>
+    """
+    
+    return render_template_string(html, counter=counter)
+
+if __name__ == '__main__':
+    app.run(debug=True)
+`);
+            }
+
+            // Update the file tree
+            const fileTree = document.querySelector(".file-tree-content");
+            fileTree.innerHTML = `
+                    <div class="file-item selected" data-path="app.py">
+                        <span class="file-item-icon">📄</span>
+                        <span class="file-item-name">app.py</span>
+                    </div>
+                    <div class="file-item" data-path="requirements.txt">
+                        <span class="file-item-icon">📄</span>
+                        <span class="file-item-name">requirements.txt</span>
+                    </div>
+                    <div class="file-item" data-path="README.md">
+                        <span class="file-item-icon">📄</span>
+                        <span class="file-item-name">README.md</span>
+                    </div>
+                `;
+
+            // Setup file tree interactions again for the new items
+            setupFileTree();
+          }, 3000);
+        });
+
+      // Handle run button
+      document.querySelector(".run-btn").addEventListener("click", function () {
+        const terminal = document.querySelector(".terminal");
+        terminal.innerHTML = ""; // Clear terminal
+
+        // Add terminal output
+        window.addTerminalOutput("Running code...", "info");
+
+        // Simulate code execution
+        setTimeout(() => {
+          window.addTerminalOutput(
+            "* Running on http://127.0.0.1:5000",
+            "info",
+          );
+          window.addTerminalOutput("* Debug mode: on", "info");
+          window.addTerminalOutput("Press CTRL+C to quit", "info");
+          window.addTerminalOutput(
+            '127.0.0.1 - - [14/Jun/2023 10:45:12] "GET / HTTP/1.1" 200 -',
+            "success",
+          );
+        }, 1000);
+      });
+    </script>
+  </body>
+</html>
