@@ -1,16 +1,12 @@
-import logging
-
-
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
-# Make web application accessible
+# Make web applications accessible
 try:
     from gpt_engineer.applications import web
 except ImportError:
     # This handles cases where the web module dependencies aren't installed
+    pass
+
+try:
+    from gpt_engineer.applications import modern_ide
+except ImportError:
+    # This handles cases where the modern_ide module dependencies aren't installed
     pass
