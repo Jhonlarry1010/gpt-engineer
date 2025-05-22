@@ -11,29 +11,36 @@ import os
 import tempfile
 from pathlib import Path
 
-def create_requirements_file():
-    """Create a temporary requirements file with the necessary dependencies."""
-    requirements = [
-        "fastapi>=0.100.0",
-        "uvicorn>=0.22.0",
-        "python-dotenv>=0.21.0",
-        "openai>=1.0.0",
-        "httpx>=0.24.0",
-        "pydantic>=2.3.0"
-    ]
+def get_requirements_path():
+    """Get the path to the requirements file."""
+    script_dir = Path(__file__).parent
+    requirements_path = script_dir / "requirements.txt"
 
-    temp_fd, temp_path = tempfile.mkstemp(suffix=".txt", prefix="gpte_modern_ide_requirements_")
-    with os.fdopen(temp_fd, 'w') as f:
-        f.write("\n".join(requirements))
+    if not requirements_path.exists():
+        # Create a temporary requirements file if the main one doesn't exist
+        requirements = [
+            "fastapi>=0.100.0",
+            "uvicorn[standard]>=0.22.0",
+            "python-multipart>=0.0.6",
+            "python-dotenv>=0.21.0",
+            "httpx>=0.24.0",
+            "pydantic>=2.3.0"
+        ]
 
-    return temp_path
+        temp_fd, temp_path = tempfile.mkstemp(suffix=".txt", prefix="gpte_modern_ide_requirements_")
+        with os.fdopen(temp_fd, 'w') as f:
+            f.write("\n".join(requirements))
+
+        return temp_path, True
+
+    return requirements_path, False
 
 def install_dependencies():
     """Install the required dependencies for the Modern IDE."""
     print("Installing dependencies for GPT Engineer Modern IDE...")
 
-    # Create a temporary requirements file
-    requirements_path = create_requirements_file()
+    # Get the requirements file path
+    requirements_path, is_temp = get_requirements_path()
 
     try:
         # Install the dependencies
@@ -46,23 +53,25 @@ def install_dependencies():
         print("\nDependencies installed successfully!")
         print("You can now run the Modern IDE with the command: gpte-modern-ide")
 
-        # Clean up
-        os.unlink(requirements_path)
+        # Clean up if using a temporary file
+        if is_temp and os.path.exists(requirements_path):
+            os.unlink(requirements_path)
         return True
 
     except subprocess.CalledProcessError as e:
         print(f"Error installing dependencies: {e}")
         print("\nPlease try installing them manually with:")
-        print("pip install fastapi uvicorn python-dotenv openai httpx pydantic")
+        print("pip install fastapi uvicorn[standard] python-multipart python-dotenv httpx pydantic")
 
-        # Clean up
-        os.unlink(requirements_path)
+        # Clean up if using a temporary file
+        if is_temp and os.path.exists(requirements_path):
+            os.unlink(requirements_path)
         return False
     except Exception as e:
         print(f"Unexpected error: {e}")
 
-        # Clean up
-        if os.path.exists(requirements_path):
+        # Clean up if using a temporary file
+        if is_temp and os.path.exists(requirements_path):
             os.unlink(requirements_path)
         return False
 
@@ -103,7 +112,7 @@ def create_frontend_directory():
     script_dir = Path(__file__).parent
     frontend_dir = script_dir / "frontend" / "build"
     frontend_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Create a placeholder index.html
     index_path = frontend_dir / "index.html"
     if not index_path.exists():
@@ -150,13 +159,13 @@ def create_frontend_directory():
 <body>
     <h1>GPT Engineer Modern IDE</h1>
     <p>The React-based frontend for the Modern IDE is not yet built. Please follow these instructions to build it:</p>
-    
+
     <div class="card">
         <h2>API Endpoints Available</h2>
         <p>The backend API is running and can be accessed at: <code>/api/*</code></p>
         <p>For example, try: <a href="/api/health">/api/health</a> to check the server status.</p>
     </div>
-    
+
     <div class="note">
         <p>Note: This is a placeholder page. The full React frontend will be available in future releases.</p>
     </div>

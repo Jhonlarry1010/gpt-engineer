@@ -100,7 +100,7 @@ class TaskUpdateModel(BaseModel):
     status: str = Field(..., description="Current status")
     message: str = Field(..., description="Status message")
     progress: float = Field(0, description="Progress percentage", ge=0, le=100)
-    result: Optional[Any] = Field(None, description="Task result if complete")
+    result: Optional[Dict[str, Any]] = Field(None, description="Task result if complete")
 
 # Background tasks dictionary to track long-running operations
 background_tasks = {}
@@ -132,7 +132,7 @@ class ModernIdeState:
         self.files_dict = None
         self.execution_env = DiskExecutionEnv() if CORE_DEPS_AVAILABLE else None
         self.logger = logger
-        
+
     def list_projects(self) -> List[str]:
         """List all available projects."""
         try:
@@ -153,7 +153,7 @@ class ModernIdeState:
 
                 self.ai = AI(model_name=model, temperature=temperature)
                 return {
-                    "status": "success", 
+                    "status": "success",
                     "details": f"OpenAI initialized with model {model}",
                     "provider": "openai",
                     "model": model
@@ -167,14 +167,14 @@ class ModernIdeState:
                     from gpt_engineer.applications.web.gemini_ai import GeminiAI
                     self.ai = GeminiAI(model_name=model, temperature=temperature, api_key=api_key)
                     return {
-                        "status": "success", 
+                        "status": "success",
                         "details": f"Gemini initialized with model {model}",
                         "provider": "gemini",
                         "model": model
                     }
                 except ImportError:
                     return {
-                        "status": "error", 
+                        "status": "error",
                         "details": "Gemini support not available. Please install the google-generativeai package"
                     }
             else:
@@ -196,7 +196,7 @@ class ModernIdeState:
             project_path.mkdir(parents=True)
             self.current_project = project_path
             return {
-                "status": "success", 
+                "status": "success",
                 "details": f"Project '{project_name}' created successfully",
                 "project_name": project_name
             }
@@ -216,7 +216,7 @@ class ModernIdeState:
 
             self.current_project = project_path
             return {
-                "status": "success", 
+                "status": "success",
                 "details": f"Project '{project_name}' selected",
                 "project_name": project_name
             }
@@ -254,7 +254,7 @@ class ModernIdeState:
             )
 
             return {
-                "status": "success", 
+                "status": "success",
                 "details": f"Agent initialized for project '{self.current_project.name}'"
             }
         except Exception as e:
@@ -293,8 +293,8 @@ class ModernIdeState:
 
             # Return success message and list of generated files
             return {
-                "status": "success", 
-                "details": "Code generated successfully", 
+                "status": "success",
+                "details": "Code generated successfully",
                 "files": list(self.files_dict.keys())
             }
         except Exception as e:
@@ -339,8 +339,8 @@ class ModernIdeState:
 
             # Return success message and list of improved files
             return {
-                "status": "success", 
-                "details": "Code improved successfully", 
+                "status": "success",
+                "details": "Code improved successfully",
                 "files": list(self.files_dict.keys())
             }
         except Exception as e:
@@ -359,9 +359,9 @@ class ModernIdeState:
 
             content = file_path.read_text()
             return {
-                "status": "success", 
-                "details": f"File '{filename}' read successfully", 
-                "filename": filename, 
+                "status": "success",
+                "details": f"File '{filename}' read successfully",
+                "filename": filename,
                 "content": content
             }
         except Exception as e:
@@ -381,8 +381,8 @@ class ModernIdeState:
             file_path.parent.mkdir(parents=True, exist_ok=True)
             file_path.write_text(content)
             return {
-                "status": "success", 
-                "details": f"File '{filename}' saved successfully", 
+                "status": "success",
+                "details": f"File '{filename}' saved successfully",
                 "filename": filename
             }
         except Exception as e:
@@ -433,8 +433,8 @@ class ModernIdeState:
             )
 
             return {
-                "status": "success", 
-                "details": "Code execution completed", 
+                "status": "success",
+                "details": "Code execution completed",
                 "output": result.output
             }
         except Exception as e:
@@ -504,7 +504,7 @@ async def init_agent():
         raise HTTPException(status_code=400, detail=result["details"])
     return result
 
-@app.post("/api/code/generate", response_model=CodeResponse)
+@app.post("/api/code/generate")
 async def generate_code(request: PromptRequest, background_tasks: BackgroundTasks):
     """Generate code from the given prompt."""
     # Check prerequisites
@@ -514,23 +514,23 @@ async def generate_code(request: PromptRequest, background_tasks: BackgroundTask
         raise HTTPException(status_code=400, detail="AI not initialized")
     if not ide_state.agent:
         raise HTTPException(status_code=400, detail="Agent not initialized")
-    
+
     # Start code generation in background
     task_id = f"generate_{id(request)}"
-    
+
     async def run_generation():
         try:
             # Update task status
             background_tasks[task_id] = {
                 "task_id": task_id,
-                "status": "running", 
+                "status": "running",
                 "message": "Generating code...",
                 "progress": 10
             }
-            
+
             # Generate code
             result = ide_state.generate_code(request.prompt)
-            
+
             # Update task status based on result
             if result["status"] == "success":
                 background_tasks[task_id] = {
@@ -557,10 +557,10 @@ async def generate_code(request: PromptRequest, background_tasks: BackgroundTask
                 "progress": 100,
                 "result": {"status": "error", "details": str(e), "files": []}
             }
-    
+
     # Start the background task
     background_tasks.add_task(run_generation)
-    
+
     # Initialize task status
     background_tasks[task_id] = {
         "task_id": task_id,
@@ -568,11 +568,11 @@ async def generate_code(request: PromptRequest, background_tasks: BackgroundTask
         "message": "Starting code generation...",
         "progress": 0
     }
-    
+
     # Return the task ID for polling
     return {"status": "accepted", "details": "Code generation started", "task_id": task_id}
 
-@app.post("/api/code/improve", response_model=CodeResponse)
+@app.post("/api/code/improve")
 async def improve_code(request: PromptRequest, background_tasks: BackgroundTasks):
     """Improve code with the given prompt."""
     # Check prerequisites
@@ -582,23 +582,23 @@ async def improve_code(request: PromptRequest, background_tasks: BackgroundTasks
         raise HTTPException(status_code=400, detail="AI not initialized")
     if not ide_state.agent:
         raise HTTPException(status_code=400, detail="Agent not initialized")
-    
+
     # Start code improvement in background
     task_id = f"improve_{id(request)}"
-    
+
     async def run_improvement():
         try:
             # Update task status
             background_tasks[task_id] = {
                 "task_id": task_id,
-                "status": "running", 
+                "status": "running",
                 "message": "Improving code...",
                 "progress": 10
             }
-            
+
             # Improve code
             result = ide_state.improve_code(request.prompt)
-            
+
             # Update task status based on result
             if result["status"] == "success":
                 background_tasks[task_id] = {
@@ -625,10 +625,10 @@ async def improve_code(request: PromptRequest, background_tasks: BackgroundTasks
                 "progress": 100,
                 "result": {"status": "error", "details": str(e), "files": []}
             }
-    
+
     # Start the background task
     background_tasks.add_task(run_improvement)
-    
+
     # Initialize task status
     background_tasks[task_id] = {
         "task_id": task_id,
@@ -636,7 +636,7 @@ async def improve_code(request: PromptRequest, background_tasks: BackgroundTasks
         "message": "Starting code improvement...",
         "progress": 0
     }
-    
+
     # Return the task ID for polling
     return {"status": "accepted", "details": "Code improvement started", "task_id": task_id}
 
@@ -645,7 +645,7 @@ async def get_task_status(task_id: str):
     """Get the status of a long-running task."""
     if task_id not in background_tasks:
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
-    
+
     return background_tasks[task_id]
 
 @app.get("/api/files", response_model=FilesListResponse)
@@ -653,7 +653,7 @@ async def list_files():
     """List all files in the current project."""
     if not ide_state.current_project:
         raise HTTPException(status_code=400, detail="No project selected")
-    
+
     return ide_state.list_files()
 
 @app.get("/api/files/{filename:path}")
@@ -661,11 +661,11 @@ async def get_file(filename: str):
     """Get the content of a file."""
     if not ide_state.current_project:
         raise HTTPException(status_code=400, detail="No project selected")
-    
+
     result = ide_state.get_file_content(filename)
     if result["status"] == "error":
         raise HTTPException(status_code=404, detail=result["details"])
-    
+
     return result
 
 @app.post("/api/files/{filename:path}")
@@ -673,11 +673,11 @@ async def save_file(filename: str, request: FileRequest):
     """Save content to a file."""
     if not ide_state.current_project:
         raise HTTPException(status_code=400, detail="No project selected")
-    
+
     result = ide_state.save_file_content(filename, request.content)
     if result["status"] == "error":
         raise HTTPException(status_code=400, detail=result["details"])
-    
+
     return result
 
 @app.post("/api/code/run", response_model=StatusResponse)
@@ -685,17 +685,17 @@ async def run_code():
     """Run the code in the current project."""
     if not ide_state.current_project:
         raise HTTPException(status_code=400, detail="No project selected")
-    
+
     result = ide_state.run_code()
     if result["status"] == "error":
         raise HTTPException(status_code=400, detail=result["details"])
-    
+
     return result
 
 # Mount static files if available
 if FRONTEND_AVAILABLE:
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
-    
+
     @app.get("/{rest_of_path:path}")
     async def serve_frontend(rest_of_path: str):
         """Serve the frontend for any path that doesn't match API routes."""
@@ -708,13 +708,13 @@ if FRONTEND_AVAILABLE:
 def run_server(host: str = "127.0.0.1", port: int = 8000, dev_mode: bool = False):
     """Run the FastAPI server."""
     logger.info(f"Starting GPT Engineer Modern IDE server on http://{host}:{port}")
-    
+
     if not CORE_DEPS_AVAILABLE:
         logger.error("Core dependencies not available. Some features may not work.")
-    
+
     if not FRONTEND_AVAILABLE:
         logger.warning("Frontend files not found. Only API endpoints will be available.")
-    
+
     # Run the server
     uvicorn.run("gpt_engineer.applications.modern_ide.server:app", host=host, port=port, reload=dev_mode)
 

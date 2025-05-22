@@ -15,24 +15,24 @@ from pathlib import Path
 def check_dependencies():
     """Check if required dependencies are installed and provide install instructions if not."""
     missing_deps = []
-    
+
     # Check for FastAPI
     if importlib.util.find_spec("fastapi") is None:
         missing_deps.append("fastapi")
-    
+
     # Check for Uvicorn
     if importlib.util.find_spec("uvicorn") is None:
         missing_deps.append("uvicorn")
-    
+
     if missing_deps:
         print("\nError: Missing required dependencies for GPT Engineer Modern IDE:")
         for dep in missing_deps:
             print(f"  - {dep}")
-        
+
         print("\nTo install all required dependencies, run:")
         print("  gpte-modern-ide-install")
         return False
-    
+
     return True
 
 def create_frontend_if_missing():
@@ -40,7 +40,7 @@ def create_frontend_if_missing():
     script_dir = Path(__file__).parent
     frontend_dir = script_dir / "frontend" / "build"
     index_path = frontend_dir / "index.html"
-    
+
     if not frontend_dir.exists() or not index_path.exists():
         print("Frontend files not found. Creating placeholder...")
         try:
@@ -112,38 +112,53 @@ def main():
         action="store_true",
         help="Open a browser window after starting the server"
     )
-    
+
     args = parser.parse_args()
-    
+
     if not check_dependencies():
-        return 1
-    
+        print("\nAttempting to install missing dependencies...")
+        try:
+            from gpt_engineer.applications.modern_ide.install import install_dependencies
+            if install_dependencies():
+                print("Dependencies installed. Continuing...")
+            else:
+                return 1
+        except ImportError:
+            print("Could not install dependencies automatically.")
+            print("Please run: gpte-modern-ide-install")
+            return 1
+
     # Create frontend placeholder if needed
     create_frontend_if_missing()
-    
+
     try:
         # Import the server module and run it
         from gpt_engineer.applications.modern_ide.server import run_server
-        
+
         print(f"Starting GPT Engineer Modern IDE on http://{args.host}:{args.port}")
-        
+
         # Open browser if requested
         if args.browser:
             import webbrowser
             webbrowser.open(f"http://{args.host}:{args.port}")
-        
+
         # Run the server
         run_server(host=args.host, port=args.port, dev_mode=args.dev)
         return 0
     except ImportError as e:
         print(f"Error importing required modules: {str(e)}")
-        print("\nThis may be because GPT Engineer is not properly installed")
+        print("\nThis may be because some dependencies are missing.")
+        print("Please run: gpte-modern-ide-install")
         return 1
     except Exception as e:
+        import traceback
         print(f"\nError starting the GPT Engineer Modern IDE: {str(e)}")
+        print("\nDetailed error information:")
+        traceback.print_exc()
         print("\nIf the error persists, please check:")
         print("1. Your OpenAI API key is correctly set")
         print("2. You have the latest version of all dependencies")
+        print("3. You have the necessary permissions to run the server")
         return 1
 
 if __name__ == "__main__":
