@@ -12,23 +12,50 @@ The GPT Engineer Web IDE provides a user-friendly interface for interacting with
 
 ## Installation
 
-The Web IDE requires Gradio to run. You can install it with the built-in installer:
+### Using the Built-in Installer (Recommended)
+
+The simplest way to install the Web IDE dependencies is with the built-in installer:
 
 ```bash
 gpte-web-install
 ```
 
-Or manually install the dependencies:
+This will automatically install Gradio and other required dependencies.
+
+### Manual Installation
+
+If the built-in installer doesn't work, you can manually install the dependencies:
 
 ```bash
-pip install gradio>=4.0.0 python-dotenv openai
+pip install gradio>=4.0.0 python-dotenv>=0.21.0 openai>=1.0.0
 ```
 
-If you encounter any issues with the installation, try:
+### Troubleshooting Installation
 
-```bash
-pip install --upgrade gradio
-```
+If you encounter installation issues:
+
+1. Make sure your pip is up to date:
+
+   ```bash
+   pip install --upgrade pip
+   ```
+
+2. Try installing with the `--user` flag:
+
+   ```bash
+   pip install --user gradio>=4.0.0
+   ```
+
+3. If you're using a virtual environment, make sure it's activated:
+
+   ```bash
+   # For virtualenv
+   source venv/bin/activate  # On Linux/Mac
+   venv\Scripts\activate     # On Windows
+
+   # For conda
+   conda activate your-env-name
+   ```
 
 ## Usage
 
@@ -46,7 +73,7 @@ python -m gpt_engineer.applications.web.run
 
 This will launch the web interface in your default browser. If it doesn't open automatically, you can access it at http://localhost:7860 by default.
 
-## Quick Start
+## Quick Start Guide
 
 1. **Set Up AI**:
 
@@ -97,23 +124,37 @@ This will launch the web interface in your default browser. If it doesn't open a
 
 If you encounter errors when running the Web IDE:
 
-1. **Gradio Installation Issues**:
+1. **Startup Issues**:
 
    - Run `gpte-web-install` to ensure all dependencies are installed
-   - If you see errors about missing modules, try `pip install --upgrade gradio`
+   - Check the console output for specific error messages
+   - Make sure you're using Python 3.10 or newer
 
 2. **API Key Problems**:
 
    - Ensure your OpenAI API key is valid and has sufficient quota
    - Check that the API key is correctly entered in the Web IDE interface
 
-3. **Application Crashes**:
+3. **Web Interface Problems**:
 
-   - Check the terminal output for error messages
-   - Ensure you're using a supported Python version (3.10+)
-   - Try restarting the application with `gpte-web`
+   - If the interface doesn't load properly, try a different web browser
+   - Clear your browser cache and cookies
+   - Check if your firewall or antivirus is blocking the connection
 
-4. **Blank Screen or UI Issues**:
-   - Try a different web browser
-   - Clear your browser cache
-   - Check if the application is running on a different port
+4. **Error Messages**:
+
+   - Note down any error messages shown in the terminal
+   - For "Error: X is not defined" messages, make sure all dependencies are installed
+
+5. **Code Generation Issues**:
+
+   - If code generation takes too long, try using a simpler prompt
+   - Check your internet connection stability
+   - Verify that your OpenAI API key has adequate rate limits
+
+6. **UI Freezes or Crashes**:
+   - Restart the application with `gpte-web`
+   - Clear your browser cache and try again
+   - Check system resources (memory usage, CPU)
+
+If problems persist, you can always fall back to the command-line interface with `gpte` while troubleshooting the web interface.

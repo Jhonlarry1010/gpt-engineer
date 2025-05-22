@@ -71,6 +71,7 @@ bench = 'gpt_engineer.benchmark.__main__:app'
 gpte_test_application = 'tests.caching_main:app'
 gpte-web = 'gpt_engineer.applications.web.run:main'
 gpte-web-install = 'gpt_engineer.applications.web.install_web:install_dependencies'
+gpte-web-check = 'gpt_engineer.applications.web.check_install:main'
 
 [tool.poetry.extras]
 test = ["pytest", "pytest-cov"]
