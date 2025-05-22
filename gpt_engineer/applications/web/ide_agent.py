@@ -141,20 +141,20 @@ class WebIdeAgent(BaseAgent):
             The generated files.
         """
         self.update_status("Starting code generation...")
-        
+
         files_dict = self.code_gen_fn(
             self.ai, prompt, self.memory, self.preprompts_holder
         )
-        
+
         self.update_status("Code generation complete")
         self.update_status("Processing code...")
-        
+
         try:
             self.process_code_fn(files_dict, self.execution_env)
             self.update_status("Code processing complete")
         except Exception as e:
             self.update_status(f"Error processing code: {str(e)}")
-        
+
         return files_dict
 
     def improve(self, prompt: Prompt, files_dict: FilesDict) -> FilesDict:
@@ -174,20 +174,20 @@ class WebIdeAgent(BaseAgent):
             The improved files.
         """
         self.update_status("Starting code improvement...")
-        
+
         files_dict = self.improve_fn(
             self.ai, prompt, self.memory, files_dict, self.preprompts_holder
         )
-        
+
         self.update_status("Code improvement complete")
         self.update_status("Processing improved code...")
-        
+
         try:
             self.process_code_fn(files_dict, self.execution_env)
             self.update_status("Improved code processing complete")
         except Exception as e:
             self.update_status(f"Error processing improved code: {str(e)}")
-        
+
         return files_dict
 
     def chat(self, message: str) -> str:
@@ -205,12 +205,17 @@ class WebIdeAgent(BaseAgent):
             The AI's response.
         """
         self.update_status("Sending message to AI...")
-        
-        # Use a simple chat context for now
-        response = self.ai.chat(
-            system_prompt="You are an AI assistant helping with code. Answer questions about programming, debugging, and software development.",
-            message=message,
-        )
-        
-        self.update_status("Received AI response")
-        return response
+
+        try:
+            # Use a simple chat context for now
+            response = self.ai.chat(
+                system_prompt="You are an AI assistant helping with code. Answer questions about programming, debugging, and software development.",
+                message=message,
+            )
+
+            self.update_status("Received AI response")
+            return response
+        except Exception as e:
+            error_msg = f"Error communicating with AI: {str(e)}"
+            self.update_status(error_msg)
+            return f"I'm sorry, I encountered an error: {error_msg}. Please check your API key and connection."

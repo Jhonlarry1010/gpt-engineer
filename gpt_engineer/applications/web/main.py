@@ -13,9 +13,15 @@ allowing users to:
 import os
 import sys
 import logging
-import gradio as gr
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
+# Import Gradio conditionally to handle cases where it's not installed
+try:
+    import gradio as gr
+    GRADIO_AVAILABLE = True
+except ImportError:
+    GRADIO_AVAILABLE = False
 
 from gpt_engineer.applications.web.ide_agent import WebIdeAgent
 from gpt_engineer.core.ai import AI
@@ -64,7 +70,7 @@ class WebIde:
         """Initialize the AI with given parameters."""
         if api_key:
             os.environ["OPENAI_API_KEY"] = api_key
-        
+
         try:
             self.ai = AI(model_name=model_name, temperature=temperature)
             return f"AI initialized with model {model_name}"
@@ -76,11 +82,11 @@ class WebIde:
         """Create a new project with the given name."""
         if not project_name or not project_name.strip():
             return "Error: Project name cannot be empty"
-            
+
         project_path = self.projects_dir / project_name
         if project_path.exists():
             return f"Error: Project '{project_name}' already exists"
-            
+
         try:
             project_path.mkdir(parents=True)
             self.current_project = project_path
@@ -93,11 +99,11 @@ class WebIde:
         """Select an existing project to work with."""
         if not project_name:
             return "No project selected"
-            
+
         project_path = self.projects_dir / project_name
         if not project_path.exists() or not project_path.is_dir():
             return f"Error: Project '{project_name}' does not exist"
-            
+
         self.current_project = project_path
         return f"Project '{project_name}' selected"
 
@@ -105,14 +111,14 @@ class WebIde:
         """Initialize the agent for the current project."""
         if not self.current_project:
             return "Error: No project selected"
-            
+
         if not self.ai:
             return "Error: AI not initialized. Please set up the AI first."
-            
+
         try:
             memory = DiskMemory(memory_path(self.current_project))
             preprompts_holder = PrepromptsHolder(PREPROMPTS_PATH)
-            
+
             self.agent = WebIdeAgent.with_default_config(
                 memory,
                 self.execution_env,
@@ -122,7 +128,7 @@ class WebIde:
                 process_code_fn=execute_entrypoint,
                 preprompts_holder=preprompts_holder,
             )
-            
+
             return f"Agent initialized for project '{self.current_project.name}'"
         except Exception as e:
             self.logger.error(f"Error initializing agent: {e}")
@@ -132,36 +138,36 @@ class WebIde:
         """Generate code from the given prompt."""
         if not self.current_project:
             return "Error: No project selected", []
-            
+
         if not self.agent:
             return "Error: Agent not initialized", []
-            
+
         if not prompt_text or not prompt_text.strip():
             return "Error: Prompt cannot be empty", []
-            
+
         try:
             # Save the prompt to a file
             prompt_file = self.current_project / "prompt"
             prompt_file.write_text(prompt_text)
-            
+
             # Create prompt object
             prompt = Prompt(prompt_text)
-            
+
             # Status update
             if status_callback:
                 status_callback("Generating code...")
-                
+
             # Generate code
             self.files_dict = self.agent.init(prompt)
-            
+
             # Save generated files
             file_store = FileStore(self.current_project)
             file_store.push(self.files_dict)
-            
+
             # Status update
             if status_callback:
                 status_callback("Code generation complete!")
-                
+
             # Return success message and list of generated files
             return "Code generated successfully", list(self.files_dict.keys())
         except Exception as e:
@@ -172,43 +178,43 @@ class WebIde:
         """Improve existing code with the given prompt."""
         if not self.current_project:
             return "Error: No project selected", []
-            
+
         if not self.agent:
             return "Error: Agent not initialized", []
-            
+
         if not prompt_text or not prompt_text.strip():
             return "Error: Improvement prompt cannot be empty", []
-            
+
         try:
             # Load existing files
             file_store = FileStore(self.current_project)
             files_dict_before = file_store.get_all_files()
-            
+
             if not files_dict_before:
                 return "Error: No existing files found to improve", []
-                
+
             # Save the prompt to a file
             improve_prompt_file = self.current_project / "improve_prompt"
             improve_prompt_file.write_text(prompt_text)
-            
+
             # Create prompt object
             prompt = Prompt(prompt_text)
-            
+
             # Status update
             if status_callback:
                 status_callback("Improving code...")
-                
+
             # Improve code
             memory = DiskMemory(memory_path(self.current_project))
             self.files_dict = self.agent.improve(prompt, files_dict_before)
-            
+
             # Save improved files
             file_store.push(self.files_dict)
-            
+
             # Status update
             if status_callback:
                 status_callback("Code improvement complete!")
-                
+
             # Return success message and list of improved files
             return "Code improved successfully", list(self.files_dict.keys())
         except Exception as e:
@@ -219,11 +225,11 @@ class WebIde:
         """Get the content of a file in the current project."""
         if not self.current_project:
             return "Error: No project selected"
-            
+
         file_path = self.current_project / filename
         if not file_path.exists():
             return f"Error: File '{filename}' does not exist"
-            
+
         try:
             return file_path.read_text()
         except Exception as e:
@@ -234,10 +240,10 @@ class WebIde:
         """Save content to a file in the current project."""
         if not self.current_project:
             return "Error: No project selected"
-            
+
         if not filename or not filename.strip():
             return "Error: Filename cannot be empty"
-            
+
         try:
             file_path = self.current_project / filename
             file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -251,33 +257,33 @@ class WebIde:
         """Run the code in the current project."""
         if not self.current_project:
             return "Error: No project selected"
-            
+
         try:
             # Find entrypoint based on common patterns
             entrypoint_candidates = ["main.py", "app.py", "index.py", "run.py"]
             entrypoint = None
-            
+
             for candidate in entrypoint_candidates:
                 if (self.current_project / candidate).exists():
                     entrypoint = candidate
                     break
-                    
+
             if not entrypoint:
                 return "Error: No entrypoint found (main.py, app.py, index.py, or run.py)"
-                
+
             # Status update
             if status_callback:
                 status_callback(f"Running {entrypoint}...")
-                
+
             # Execute code using the execution environment
             result = self.execution_env.execute_command(
                 self.current_project, f"python {entrypoint}"
             )
-            
+
             # Status update
             if status_callback:
                 status_callback("Execution completed!")
-                
+
             return result.output
         except Exception as e:
             self.logger.error(f"Error running code: {e}")
@@ -286,75 +292,76 @@ class WebIde:
 
 def create_web_ui(ide: WebIde):
     """Create the Gradio web interface for the IDE."""
-    with gr.Blocks(title="GPT Engineer - AI IDE", theme=gr.themes.Soft()) as app:
+    try:
+        with gr.Blocks(title="GPT Engineer - AI IDE", theme=gr.themes.Soft()) as app:
         gr.Markdown("# GPT Engineer - AI IDE")
         gr.Markdown(
             "Specify what you want to build, and let AI write and execute the code."
         )
-        
+
         with gr.Tabs() as tabs:
             # AI Setup Tab
             with gr.TabItem("AI Setup"):
                 with gr.Row():
                     api_key = gr.Textbox(
-                        label="OpenAI API Key", 
+                        label="OpenAI API Key",
                         placeholder="Enter your API key...",
                         type="password"
                     )
-                    
+
                 with gr.Row():
                     model_name = gr.Dropdown(
-                        label="AI Model", 
-                        choices=["gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"], 
+                        label="AI Model",
+                        choices=["gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
                         value="gpt-4o"
                     )
                     temperature = gr.Slider(
-                        label="Temperature", 
-                        minimum=0, 
-                        maximum=1, 
-                        value=0.1, 
+                        label="Temperature",
+                        minimum=0,
+                        maximum=1,
+                        value=0.1,
                         step=0.1
                     )
-                    
+
                 setup_button = gr.Button("Set Up AI", variant="primary")
                 setup_output = gr.Markdown()
-                
+
                 setup_button.click(
                     fn=ide.init_ai,
                     inputs=[model_name, temperature, api_key],
                     outputs=[setup_output]
                 )
-            
+
             # Project Management Tab
             with gr.TabItem("Project Management"):
                 with gr.Row():
                     with gr.Column():
                         gr.Markdown("### Create New Project")
                         new_project_name = gr.Textbox(
-                            label="Project Name", 
+                            label="Project Name",
                             placeholder="Enter project name..."
                         )
                         create_button = gr.Button("Create Project", variant="primary")
                         create_output = gr.Markdown()
-                        
+
                     with gr.Column():
                         gr.Markdown("### Select Existing Project")
                         refresh_button = gr.Button("Refresh Project List")
                         project_dropdown = gr.Dropdown(label="Projects", choices=ide.list_projects())
                         select_button = gr.Button("Select Project")
                         select_output = gr.Markdown()
-                
+
                 # Initialize agent button
                 init_agent_button = gr.Button("Initialize Agent for Selected Project")
                 init_agent_output = gr.Markdown()
-                
+
                 # Button click functions
                 refresh_button.click(
                     fn=ide.list_projects,
                     inputs=[],
                     outputs=[project_dropdown]
                 )
-                
+
                 create_button.click(
                     fn=ide.create_project,
                     inputs=[new_project_name],
@@ -364,125 +371,155 @@ def create_web_ui(ide: WebIde):
                     inputs=[],
                     outputs=[project_dropdown]
                 )
-                
+
                 select_button.click(
                     fn=ide.select_project,
                     inputs=[project_dropdown],
                     outputs=[select_output]
                 )
-                
+
                 init_agent_button.click(
                     fn=ide.init_agent,
                     inputs=[],
                     outputs=[init_agent_output]
                 )
-            
+
             # Code Generation Tab
             with gr.TabItem("Generate Code"):
                 generation_prompt = gr.Textbox(
-                    label="Project Specification", 
+                    label="Project Specification",
                     placeholder="Describe the application you want to build...",
                     lines=10
                 )
                 generate_button = gr.Button("Generate Code", variant="primary")
                 generation_status = gr.Markdown()
-                
+
                 with gr.Row():
                     generation_result = gr.Markdown(label="Result")
                     generated_files = gr.Dropdown(label="Generated Files")
-                
+
                 generate_button.click(
                     fn=ide.generate_code,
                     inputs=[generation_prompt],
                     outputs=[generation_result, generated_files]
                 )
-            
+
             # Code Improvement Tab
             with gr.TabItem("Improve Code"):
                 improvement_prompt = gr.Textbox(
-                    label="Improvement Specification", 
+                    label="Improvement Specification",
                     placeholder="Describe how you want to improve the existing code...",
                     lines=10
                 )
                 improve_button = gr.Button("Improve Code", variant="primary")
                 improvement_status = gr.Markdown()
-                
+
                 with gr.Row():
                     improvement_result = gr.Markdown(label="Result")
                     improved_files = gr.Dropdown(label="Improved Files")
-                
+
                 improve_button.click(
                     fn=ide.improve_code,
                     inputs=[improvement_prompt],
                     outputs=[improvement_result, improved_files]
                 )
-            
+
             # File Explorer Tab
             with gr.TabItem("File Explorer"):
                 with gr.Row():
                     file_dropdown = gr.Dropdown(label="Select File")
                     refresh_files_button = gr.Button("Refresh Files")
-                
+
                 file_editor = gr.Code(language="python", label="File Editor", interactive=True)
                 save_button = gr.Button("Save File")
                 file_status = gr.Markdown()
-                
+
                 # Button click functions
                 def refresh_files():
                     if not ide.current_project:
                         return ["No project selected"]
                     return [f.name for f in ide.current_project.glob("**/*") if f.is_file()]
-                
+
                 refresh_files_button.click(
                     fn=refresh_files,
                     inputs=[],
                     outputs=[file_dropdown]
                 )
-                
+
                 file_dropdown.change(
                     fn=ide.get_file_content,
                     inputs=[file_dropdown],
                     outputs=[file_editor]
                 )
-                
+
                 save_button.click(
                     fn=ide.save_file_content,
                     inputs=[file_dropdown, file_editor],
                     outputs=[file_status]
                 )
-            
+
             # Run & Test Tab
             with gr.TabItem("Run & Test"):
                 run_button = gr.Button("Run Code", variant="primary")
                 run_status = gr.Markdown()
                 output_terminal = gr.Textbox(label="Output", lines=10, max_lines=30)
-                
+
                 run_button.click(
                     fn=ide.run_code,
                     inputs=[],
                     outputs=[output_terminal]
                 )
-        
-    return app
+
+        return app
+    except Exception as e:
+        print(f"Error creating web UI: {str(e)}")
+        # Create a minimal fallback UI if there's an error with the main UI
+        with gr.Blocks(title="GPT Engineer - AI IDE (Fallback Mode)") as fallback_app:
+            gr.Markdown("# GPT Engineer - AI IDE (Fallback Mode)")
+            gr.Markdown("There was an error creating the full UI. This is a minimal fallback interface.")
+
+            with gr.Row():
+                api_key = gr.Textbox(label="OpenAI API Key", type="password")
+                model_dropdown = gr.Dropdown(
+                    label="Model",
+                    choices=["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"],
+                    value="gpt-4o"
+                )
+
+            prompt = gr.Textbox(label="Project Specification", lines=10)
+            generate_btn = gr.Button("Generate Code")
+            output = gr.Textbox(label="Output", lines=10)
+
+            generate_btn.click(
+                fn=lambda api, model, prompt: f"Would generate code with {model} based on: {prompt}",
+                inputs=[api_key, model_dropdown, prompt],
+                outputs=[output]
+            )
+
+        return fallback_app
 
 
 def main():
     """Main entry point for the web IDE."""
     print("Starting GPT Engineer Web IDE...")
-    
-    try:
-        import gradio as gr
-    except ImportError:
-        print("Gradio is not installed. Please install it with:")
+
+    if not GRADIO_AVAILABLE:
+        print("Error: Gradio is not installed. Please install it with:")
         print("pip install gradio")
         print("Then run the IDE again.")
         return
-    
-    ide = WebIde()
-    app = create_web_ui(ide)
-    
-    # Launch the Gradio app
-    app.launch(share=True)
+
+    try:
+        ide = WebIde()
+        app = create_web_ui(ide)
+
+        # Launch the Gradio app
+        app.launch(share=False)  # Changed to share=False for security by default
+
+    except Exception as e:
+        print(f"Error starting the Web IDE: {str(e)}")
+        print("If this is related to Gradio, try reinstalling it with:")
+        print("pip install --upgrade gradio")
 
 
 if __name__ == "__main__":

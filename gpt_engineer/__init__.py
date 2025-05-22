@@ -9,4 +9,8 @@ logging.basicConfig(
 )
 
 # Make web application accessible
-from gpt_engineer.applications import web
+try:
+    from gpt_engineer.applications import web
+except ImportError:
+    # This handles cases where the web module dependencies aren't installed
+    pass

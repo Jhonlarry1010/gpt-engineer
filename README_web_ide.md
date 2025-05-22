@@ -12,10 +12,22 @@ The GPT Engineer Web IDE provides a user-friendly interface for interacting with
 
 ## Installation
 
-The Web IDE requires Gradio to run. You can install it with:
+The Web IDE requires Gradio to run. You can install it with the built-in installer:
 
 ```bash
-pip install gradio
+gpte-web-install
+```
+
+Or manually install the dependencies:
+
+```bash
+pip install gradio>=4.0.0 python-dotenv openai
+```
+
+If you encounter any issues with the installation, try:
+
+```bash
+pip install --upgrade gradio
 ```
 
 ## Usage
@@ -80,3 +92,28 @@ This will launch the web interface in your default browser. If it doesn't open a
 
 - The Web IDE requires an internet connection to communicate with the OpenAI API.
 - Complex projects may require multiple iterations or manual adjustments.
+
+## Troubleshooting
+
+If you encounter errors when running the Web IDE:
+
+1. **Gradio Installation Issues**:
+
+   - Run `gpte-web-install` to ensure all dependencies are installed
+   - If you see errors about missing modules, try `pip install --upgrade gradio`
+
+2. **API Key Problems**:
+
+   - Ensure your OpenAI API key is valid and has sufficient quota
+   - Check that the API key is correctly entered in the Web IDE interface
+
+3. **Application Crashes**:
+
+   - Check the terminal output for error messages
+   - Ensure you're using a supported Python version (3.10+)
+   - Try restarting the application with `gpte-web`
+
+4. **Blank Screen or UI Issues**:
+   - Try a different web browser
+   - Clear your browser cache
+   - Check if the application is running on a different port

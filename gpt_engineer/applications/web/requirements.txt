@@ -1,0 +1,4 @@
+# Requirements for GPT Engineer Web IDE
+gradio>=4.0.0
+python-dotenv>=0.21.0
+openai>=1.0.0
